@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PrensaZip – compressão hidráulica</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#d9d6cf;--fg:#22262a;--panel:#eceae4;--steel:#4a5158;--steel2:#6b737b;--yellow:#f5c400;--rust:#b5532a;--line:#22262a;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1d2023;--fg:#eceae4;--panel:#2a2e33;--steel:#6b737b;--steel2:#8b939b;--line:#eceae4;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1d2023;--fg:#eceae4;--panel:#2a2e33;--steel:#6b737b;--steel2:#8b939b;--line:#eceae4;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.5 Barlow,system-ui,sans-serif;min-height:100vh}
+main{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+h1{font:800 clamp(40px,10vw,68px)/.95 "Barlow Condensed",Impact,sans-serif;margin:0 0 8px;letter-spacing:.5px}
+h1 span{background:var(--yellow);color:#22262a;padding:0 10px;display:inline-block;transform:rotate(-1.5deg)}
+.sub{margin:0 0 20px;max-width:46ch}
+.drop{display:block;border:3px dashed var(--line);background:var(--panel);padding:18px;text-align:center;cursor:pointer;font-weight:600}
+.drop.over{background:var(--yellow);color:#22262a}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop:focus-within{outline:3px solid var(--rust);outline-offset:3px}
+.stage{position:relative;height:380px;margin:20px 0 0;background:var(--panel);border:3px solid var(--line);overflow:hidden}
+.stage.shake{animation:shake .45s}
+@keyframes shake{20%{transform:translate(-6px,4px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-4px,2px)}80%{transform:translate(3px,-2px)}}
+.frame-l,.frame-r{position:absolute;top:0;bottom:36px;width:26px;background:repeating-linear-gradient(135deg,var(--yellow) 0 12px,#22262a 12px 24px)}
+.frame-l{left:0}.frame-r{right:0}
+.bed{position:absolute;left:0;right:0;bottom:0;height:36px;background:var(--steel);border-top:4px solid #22262a}
+.ram{position:absolute;left:50%;top:0;width:0;will-change:transform}
+.rod{position:absolute;left:-18px;width:36px;bottom:60px;height:500px;background:linear-gradient(90deg,#8b939b,#d9dde0 40%,#6b737b);border:2px solid #22262a}
+.plate{position:absolute;left:-130px;width:260px;height:28px;bottom:32px;background:var(--steel);border:3px solid #22262a;box-shadow:inset 0 6px 0 var(--steel2)}
+.item{position:absolute;left:50%;bottom:36px;width:160px;height:200px;margin-left:-80px;transform-origin:50% 100%;display:grid;place-items:center;background:#fff;border:2px solid #22262a;overflow:hidden;color:#22262a}
+.item img{width:100%;height:100%;object-fit:cover;display:block}
+.item .ext{font:800 40px "Barlow Condensed",Impact,sans-serif;text-align:center;line-height:1}
+.item video{width:100%;height:100%;object-fit:cover;display:block}
+.item .ico{width:70px;height:90px;background:#eceae4;border:3px solid #22262a;position:relative;margin:0 auto 8px}
+.item .ico:before{content:"";position:absolute;right:-3px;top:-3px;width:22px;height:22px;background:#f5c400;border-left:3px solid #22262a;border-bottom:3px solid #22262a}
+.empty{position:absolute;inset:0 26px 36px;display:grid;place-items:center;text-align:center;font-weight:600;padding:16px}
+.spark{position:absolute;width:6px;height:6px;background:var(--yellow);pointer-events:none}
+.flash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+button{font:800 22px "Barlow Condensed",Impact,sans-serif;letter-spacing:.5px;padding:10px 22px;border:3px solid var(--line);background:var(--yellow);color:#22262a;cursor:pointer}
+button.alt{background:var(--panel);color:var(--fg)}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible{outline:3px solid var(--rust);outline-offset:3px}
+.result{margin-top:16px;border:3px solid var(--line);background:var(--panel);padding:14px 16px}
+.result[hidden]{display:none}
+.result b{font:800 28px "Barlow Condensed",Impact,sans-serif}
+.bar{height:14px;background:var(--steel2);margin:8px 0}
+.bar i{display:block;height:100%;width:3%;background:var(--rust)}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:grid;place-items:center;padding:16px;z-index:5}
+.modal[hidden]{display:none}
+.card{background:var(--panel);color:var(--fg);border:4px solid var(--line);max-width:440px;width:100%;max-height:100%;overflow:auto;padding:20px}
+.card h2{font:800 34px/1 "Barlow Condensed",Impact,sans-serif;margin:0 0 10px}
+.card ul{padding:0;list-style:none;margin:0 0 12px}
+.card li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px dashed var(--steel2);padding:5px 0;font-size:15px}
+.old{text-decoration:line-through;color:var(--steel2)}
+.price{font:800 48px/1 "Barlow Condensed",Impact,sans-serif;color:var(--rust);margin:4px 0 14px;word-break:break-word}
+.err{background:var(--rust);color:#fff;padding:8px 10px;margin-top:12px;font-weight:600}
+.err[hidden]{display:none}
+@media (prefers-reduced-motion:reduce){.stage.shake{animation:none}}
+</style>
+</head>
+<body>
+<main>
+  <h1>Prensa<span>Zip</span></h1>
+  <p class="sub">Compressão 100% hidráulica. Envie seu arquivo e deixe a máquina fazer o trabalho pesado. Literalmente.</p>
+
+  <label class="drop" id="drop">
+    <input type="file" id="file">
+    Toque aqui ou arraste um arquivo
+  </label>
+
+  <div class="stage" id="stage">
+    <div class="frame-l"></div><div class="frame-r"></div>
+    <div class="empty" id="empty">Nenhum arquivo na prensa.</div>
+    <div class="item" id="item" hidden></div>
+    <div class="ram" id="ram"><div class="rod"></div><div class="plate"></div></div>
+    <div class="bed"></div>
+    <div class="flash" id="flash"></div>
+  </div>
+
+  <div class="actions">
+    <button id="go" disabled>Comprimir</button>
+    <button id="again" class="alt" hidden>Esmagar outro</button>
+  </div>
+
+  <div class="result" id="result" hidden>
+    <b>Arquivo comprimido com sucesso!</b>
+    <div class="bar"><i></i></div>
+    <p id="sizes" style="margin:0 0 12px"></p>
+    <button id="dl">Baixar arquivo</button>
+  </div>
+</main>
+
+<div class="modal" id="modal" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="mt">
+    <h2 id="mt">Download premium</h2>
+    <ul>
+      <li><span>Taxa de prensagem hidráulica</span><span>R$ 2.300.000,00</span></li>
+      <li><span>Manutenção do pistão</span><span>R$ 1.450.000,00</span></li>
+      <li><span>Limpeza do que sobrou</span><span>R$ 999.990,00</span></li>
+      <li><span>Taxa de conveniência</span><span>R$ 3.100.000,00</span></li>
+    </ul>
+    <div class="old">R$ 12.999.999,00</div>
+    <div class="price">R$ 7.849.990,00</div>
+    <div class="actions" style="margin-top:0">
+      <button id="pay">Pagar agora</button>
+      <button id="close" class="alt">Desistir</button>
+    </div>
+    <div class="err" id="err" hidden></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(i){return document.getElementById(i)};
+  var stage=$('stage'),item=$('item'),ram=$('ram'),go=$('go'),again=$('again'),result=$('result'),empty=$('empty');
+  var file=null,busy=false,url=null;
+  var REST=0,TOP_Y=84,MAX_Y=272,ITEM_H=200,MIN=0.06;
+
+  function fmt(b){
+    if(b<1024)return b+' B';
+    if(b<1048576)return (b/1024).toFixed(1).replace('.',',')+' KB';
+    return (b/1048576).toFixed(2).replace('.',',')+' MB';
+  }
+  function setRam(y){ram.style.transform='translateY('+y+'px)'}
+  function setItem(y){
+    var s=y<=TOP_Y?1:Math.max(MIN,(ITEM_H-(y-TOP_Y))/ITEM_H);
+    item.style.transform='scale('+(1+(1-s)*0.28)+','+s+')';
+  }
+  function load(f){
+    if(!f||busy)return;
+    file=f;
+    if(url){URL.revokeObjectURL(url);url=null}
+    item.innerHTML='';
+    if(f.type.indexOf('image/')===0){
+      url=URL.createObjectURL(f);
+      var im=document.createElement('img');im.alt='';im.src=url;item.appendChild(im);
+    }else if(f.type.indexOf('video/')===0){
+      url=URL.createObjectURL(f);
+      var v=document.createElement('video');v.muted=true;v.preload='metadata';v.src=url+'#t=0.5';item.appendChild(v);
+    }else{
+      var d=document.createElement('div');d.className='ext';
+      var ext=(f.name.split('.').length>1?f.name.split('.').pop():'arq').slice(0,5).toUpperCase();
+      var ic=document.createElement('div');ic.className='ico';d.appendChild(ic);
+      d.appendChild(document.createTextNode('.'+ext));
+      item.appendChild(d);
+    }
+    item.hidden=false;empty.hidden=true;result.hidden=true;again.hidden=true;
+    item.style.transform='none';setRam(REST);go.disabled=false;
+  }
+  $('file').addEventListener('change',function(e){load(e.target.files[0])});
+  var drop=$('drop');
+  ['dragenter','dragover'].forEach(function(n){drop.addEventListener(n,function(e){e.preventDefault();drop.classList.add('over')})});
+  ['dragleave','drop'].forEach(function(n){drop.addEventListener(n,function(e){e.preventDefault();drop.classList.remove('over')})});
+  drop.addEventListener('drop',function(e){load(e.dataTransfer.files[0])});
+
+  function anim(from,to,ms,ease,cb,tick){
+    var t0=null;
+    function f(t){
+      if(t0===null)t0=t;
+      var p=Math.min(1,(t-t0)/ms),y=from+(to-from)*ease(p);
+      tick(y);
+      if(p<1)requestAnimationFrame(f);else cb();
+    }
+    requestAnimationFrame(f);
+  }
+  function sparks(){
+    var cx=stage.clientWidth/2,cy=stage.clientHeight-48;
+    for(var i=0;i<22;i++){
+      var s=document.createElement('div');s.className='spark';
+      s.style.left=cx+'px';s.style.top=cy+'px';stage.appendChild(s);
+      var a=Math.PI*(1+Math.random()),d=60+Math.random()*130;
+      s.animate([{transform:'translate(0,0)',opacity:1},{transform:'translate('+Math.cos(a)*d+'px,'+(Math.sin(a)*d+40)+'px)',opacity:0}],{duration:600+Math.random()*400,easing:'ease-out'}).onfinish=(function(el){return function(){el.remove()}})(s);
+    }
+    var fl=$('flash');
+    fl.animate([{opacity:.7},{opacity:0}],{duration:250});
+    if(!matchMedia('(prefers-reduced-motion:reduce)').matches){
+      stage.classList.remove('shake');void stage.offsetWidth;stage.classList.add('shake');
+    }
+  }
+  go.addEventListener('click',function(){
+    if(!file||busy)return;
+    busy=true;go.disabled=true;
+    anim(0,MAX_Y,1500,function(p){return p*p*p},function(){
+      sparks();
+      setTimeout(function(){
+        anim(MAX_Y,REST,900,function(p){return 1-Math.pow(1-p,2)},function(){
+          busy=false;
+          var after=Math.max(1,Math.round(file.size*0.03));
+          $('sizes').textContent='Antes: '+fmt(file.size)+'  →  Depois: '+fmt(after)+' (97% menor, e olha que nem precisou de algoritmo)';
+          result.hidden=false;again.hidden=false;
+        },function(y){setRam(y)});
+      },700);
+    },function(y){setRam(y);setItem(y)});
+  });
+  again.addEventListener('click',function(){
+    file=null;item.hidden=true;item.innerHTML='';empty.hidden=false;result.hidden=true;again.hidden=true;go.disabled=true;
+    $('file').value='';
+  });
+
+  var modal=$('modal'),err=$('err');
+  $('dl').addEventListener('click',function(){err.hidden=true;modal.hidden=false;$('pay').focus()});
+  $('close').addEventListener('click',function(){modal.hidden=true});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')modal.hidden=true});
+  var tries=0;
+  var msgs=['Pagamento recusado: limite insuficiente. Tente vender um rim.','Recusado de novo. Já tentou o outro rim?','Seu banco ligou para perguntar se você está bem.','Parcelamento em 999x disponível, mas só para os seus netos.'];
+  $('pay').addEventListener('click',function(){
+    err.textContent=msgs[tries%msgs.length];tries++;err.hidden=false;
+  });
+})();
+</script>
+</body>
+</html>
